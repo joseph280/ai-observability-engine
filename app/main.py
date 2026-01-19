@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from app.api.routes import router as api_router
+from dotenv import load_dotenv
+load_dotenv()
 
 app = FastAPI(
     title="AI Observability Engine",
