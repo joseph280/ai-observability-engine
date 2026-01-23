@@ -4,6 +4,14 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 
+class EvaluationBase(BaseModel):
+    score: float
+    passed: bool
+    reasoning: Optional[str]
+
+    class Config:
+        from_attributes = True
+
 class TaskCreate(BaseModel):
     input_text: str = Field(..., min_length=1, description="User-provided task input")
 

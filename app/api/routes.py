@@ -8,8 +8,10 @@ from app.db.session import get_db
 from app.schemas.task import TaskCreate, TaskRead
 from sqlalchemy.orm import Session
 
+from app.services.runner import TaskRunner
+
 router = APIRouter()
-engine = LLMEngine()
+runner = TaskRunner()
 
 
 @router.get("/health")
@@ -18,22 +20,7 @@ def health_check():
 
 @router.post("/tasks", response_model=TaskRead)
 def create_task(payload: TaskCreate, db: Session = Depends(get_db)):
-    task = TaskDB(
-        input_text=payload.input_text,
-        status="processing"
-    )
-    db.add(task)
-    db.commit()
-    db.refresh(task)
-     
-    output = engine.run_task(payload.input_text)
-
-    task.output_text = output
-    task.status = "completed"
-    db.commit()
-    db.refresh(task)
-
-    return task
+    return runner.run(payload.input_text, db)
 
 @router.get("/tasks/{task_id}", response_model=TaskRead)
 def get_task(task_id: str, db: Session = Depends(get_db)):
