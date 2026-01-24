@@ -3,11 +3,18 @@ import time
 
 from openai import OpenAI
 
+from app.core.logger import get_logger
+
+#Initialize the logger for this module
+logger = get_logger(__name__)
+
 api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
+    # Log critical error before crashing
+    logger.critical("missing_openai_api_key")
     raise RuntimeError("OPENAI_API_KEY is not set")
 
-client = OpenAI(api_key)
+client = OpenAI(api_key=api_key)
 
 class LLMEngine:
     def __init__(self, provider: str ="openai"):
@@ -24,20 +31,38 @@ class LLMEngine:
             try:
                 start_time = time.time()
 
+                # Log attempt start
+                logger.info("llm_request_start", extra={"attempt": attempt + 1})
+
                 if self.provider == "openai":
                     output = self._run_openai(input_text)
                 else:
                     output = self._run_dummy(input_text)
                     
                 latency = time.time() - start_time
-                print(f"[LLMEngine] latency={latency:.2f}s")
+                
+                # STRUCTRED LOG: We pass metrics as data, not string text
+                logger.info(
+                    "llm_request_success", 
+                    extra={
+                        "latency": round(latency, 4), 
+                        "attempt": attempt + 1,
+                        "token_count": len(output.split()) # Rough estimate
+                    }
+                )
 
                 return output
             except Exception as e:
                 last_error = e
-                print(f"[LLMEngine] attempt {attempt+1} failed: {e}")
+                # Log failure with the error message
+                logger.error(
+                    "llm_request_failed", 
+                    extra={"attempt": attempt + 1, "error": str(e)}
+                )
+                time.sleep(1)
 
-            raise RuntimeError("LLM failed after retries") from last_error
+        logger.critical("llm_max_retries_exceeded")
+        raise RuntimeError(f"LLM failed after {retries} retries") from last_error
     
     def _run_openai(self, input_text: str) -> str:
         response = client.responses.create(

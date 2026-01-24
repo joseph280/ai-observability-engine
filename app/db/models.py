@@ -12,6 +12,7 @@ class TaskDB(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     input_text = Column(Text, nullable=False)
     output_text = Column(Text)
+    evaluation = relationship("EvaluationDB", back_populates="task", uselist=False, cascade="all, delete-orphan")
     status = Column(String, default="pending")
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
