@@ -20,7 +20,7 @@ class AnalyticsService:
         total_evals = db.query(func.count(EvaluationDB.id)).scalar() or 0
         passed_evals = db.query(func.count(EvaluationDB.id)).filter(EvaluationDB.passed == True).scalar() or 0
 
-        pass_rate = (passed_evals/total_evals) if total_evals>0 else 0.0
+        pass_rate = (passed_evals/(total_evals+failed)) if total_evals>0 else 0.0
 
         return {
             "total_requests": total_tasks,

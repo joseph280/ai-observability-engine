@@ -1,6 +1,6 @@
 from typing import Dict
 
-from app.models.conversation import Conversation
+from app.schemas.conversation import Conversation
 
 
 class ConversationStore:
