@@ -15,7 +15,7 @@ class TaskRunner:
         self.engine = LLMEngine()
         self.evaluator = Evaluator()
 
-    def run(self, input_text: str, db: Session) -> TaskDB:     
+    async def run(self, input_text: str, db: Session) -> TaskDB:     
         # 1. Log Start. Create Task (Status: Processing)
         logger.info("task_processing_start", extra={"input_snippet": input_text[:50]})
 
@@ -29,7 +29,7 @@ class TaskRunner:
         
         # 2. Run LLM
         try: 
-            output = self.engine.run_task(input_text)
+            output = await self.engine.run_task(input_text)
             task.output_text = output
             task.status = "completed"
         except Exception as e:

@@ -22,8 +22,8 @@ def health_check():
     return {"status":"ok"}
 
 @router.post("/tasks", response_model=TaskRead)
-def create_task(payload: TaskCreate, db: Session = Depends(get_db)):
-    return runner.run(payload.input_text, db)
+async def create_task(payload: TaskCreate, db: Session = Depends(get_db)):
+    return await runner.run(payload.input_text, db)
 
 @router.get("/tasks/{task_id}", response_model=TaskRead)
 def get_task(task_id: str, db: Session = Depends(get_db)):
