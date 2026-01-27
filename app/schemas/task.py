@@ -1,19 +1,18 @@
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class EvaluationBase(BaseModel):
     score: float
     passed: bool
-    reasoning: Optional[str]
-
-    class Config:
-        from_attributes = True
+    reasoning: Optional[str] = None
+    
+    model_config = ConfigDict(from_attributes=True)
 
 class TaskCreate(BaseModel):
-    input_text: str = Field(..., min_length=1, description="User-provided task input")
+    input_text: str 
 
 
 class TaskRead(BaseModel):
@@ -24,5 +23,4 @@ class TaskRead(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes = True)
