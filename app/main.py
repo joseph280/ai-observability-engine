@@ -4,6 +4,10 @@ load_dotenv()
 
 from app.api.routes import router as api_router
 
+from app.db.database import Base, engine 
+from app.db.models import TaskDB, EvaluationDB  # Import models so Base knows about them
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="AI Observability Engine",
