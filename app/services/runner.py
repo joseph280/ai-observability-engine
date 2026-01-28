@@ -29,7 +29,7 @@ class TaskRunner:
         
         # 2. Run LLM
         try: 
-            output = await self.engine.run_task(input_text)
+            output, math_score = await self.engine.run_task(input_text)
             task.output_text = output
             task.status = "completed"
         except Exception as e:
@@ -49,7 +49,8 @@ class TaskRunner:
             extra={
                 "task_id": task.id, 
                 "score": eval_result["score"], 
-                "passed": eval_result["passed"]
+                "passed": eval_result["passed"],
+                "confidence_score": math_score
             }
         )
         # 4. Save Evaluation
@@ -59,7 +60,8 @@ class TaskRunner:
             task_id = task.id,
             passed = eval_result["passed"],
             score = eval_result["score"],
-            reasoning = reasoning_str
+            reasoning = reasoning_str,
+            confidence_score = math_score
         )
         db.add(evaluation)
 

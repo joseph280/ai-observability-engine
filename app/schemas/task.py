@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict
 class EvaluationBase(BaseModel):
     score: float
     passed: bool
+    confidence_score: float
     reasoning: Optional[str] = None
     
     model_config = ConfigDict(from_attributes=True)
@@ -22,5 +23,7 @@ class TaskRead(BaseModel):
     status:str
     created_at: datetime
     updated_at: datetime
+
+    evaluation: Optional[EvaluationBase] = None
 
     model_config = ConfigDict(from_attributes = True)

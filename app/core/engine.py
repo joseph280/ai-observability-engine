@@ -1,4 +1,5 @@
 import asyncio
+import math
 import os
 
 from openai import AsyncOpenAI
@@ -20,7 +21,7 @@ class LLMEngine:
     def __init__(self, provider: str ="openai"):
         self.provider = provider
 
-    async def run_task(self, input_text: str) -> str:
+    async def run_task(self, input_text: str) -> tuple [str, float]:
         """
         Send input_text to an LLM and return output_text.
         """
@@ -35,9 +36,9 @@ class LLMEngine:
                 logger.info("llm_request_start", extra={"attempt": attempt + 1})
 
                 if self.provider == "openai":
-                    output = await self._run_openai(input_text)
+                    output, confidence = await self._run_openai(input_text)
                 else:
-                    output = self._run_dummy(input_text)
+                    output, confidence = self._run_dummy(input_text)
                     
                 latency = asyncio.get_event_loop().time() - start_time
                 
@@ -51,7 +52,7 @@ class LLMEngine:
                     }
                 )
 
-                return output
+                return output, confidence
             
             except Exception as e:
                 last_error = e
@@ -65,17 +66,45 @@ class LLMEngine:
         logger.critical("llm_max_retries_exceeded")
         raise RuntimeError(f"LLM failed after {retries} retries") from last_error
     
-    async def _run_openai(self, input_text: str) -> str:
+    async def _run_openai(self, input_text: str) -> tuple[str, float]:
         response = await client.responses.create(
             model="gpt-3.5-turbo",
             instructions="You are a helpful assistant.",
+            top_logprobs=1,
             input= input_text,
             timeout=15,
+            include=["message.output_text.logprobs"]
         )
 
-        return response.output_text
+        #Parse Output Text
+        content_item = response.output[0].content[0]
+        text_content = content_item.text
+
+        #Parse Logprobs
+        raw_logprobs = getattr(content_item, "logprobs", [])
+
+        if not raw_logprobs:
+            return text_content, 0.0
+
+        #Calculate average Confidence
+        linear_probs = []
+        for token_data in raw_logprobs:
+            lp = getattr(token_data, "logprob", -100)
+            linear_probs.append(math.exp(lp))
+
+        avg_confidence = sum(linear_probs) / len(linear_probs) if linear_probs else 0.0
+
+        return text_content, avg_confidence
     
+
+    async def evaluate_text(self, input_text: str, output_text: str) -> dict:
+        #Use LLM to judge
+        return
     
-    def _run_dummy(self, input_text: str) -> str:
+
+
+
+    
+    def _run_dummy(self, input_text: str) -> tuple [str, float]:
         # Temporary fake model
-        return f"[DUMMY MODEL OUTPUT] You said: {input_text}"
+        return f"[DUMMY MODEL OUTPUT] You said: {input_text}", 0.999
