@@ -1,3 +1,4 @@
+import uuid
 from fastapi import Depends
 from sqlalchemy.orm import Session
 
@@ -41,26 +42,26 @@ class TaskRunner:
             raise e
         
         # 3. Run Evaluation (The Observability Layer)
-        eval_result = self.evaluator.evaluate(input_text, output)
+        eval_result = await self.evaluator.evaluate(input_text, output)
 
         # Log the evaluation outcome
         logger.info(
             "task_evaluated", 
             extra={
                 "task_id": task.id, 
-                "score": eval_result["score"], 
+                "judge_score": eval_result["judge_score"], 
                 "passed": eval_result["passed"],
+                "reasoning": eval_result["reasoning"],
                 "confidence_score": math_score
             }
         )
         # 4. Save Evaluation
-        # Convert flags list to string for DB
-        reasoning_str = "; ".join(eval_result.get("flags", []))
         evaluation = EvaluationDB(
+            id =str(uuid.uuid4()),
             task_id = task.id,
             passed = eval_result["passed"],
-            score = eval_result["score"],
-            reasoning = reasoning_str,
+            judge_score = eval_result["judge_score"],
+            reasoning = eval_result["reasoning"],
             confidence_score = math_score
         )
         db.add(evaluation)

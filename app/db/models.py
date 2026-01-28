@@ -22,7 +22,7 @@ class EvaluationDB(Base):
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     task_id = Column(String, ForeignKey("tasks.id"))
-    score = Column(Float, default=0.0) #AI Judge score
+    judge_score = Column(Float, default=0.0) #AI Judge score
     confidence_score = Column(Float, default = 0.0) #Statistical log-probability average
     passed = Column(Boolean)
     reasoning = Column(Text) # We will join the 'flags' list into a string here

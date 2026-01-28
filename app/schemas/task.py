@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict
 
 
 class EvaluationBase(BaseModel):
-    score: float
+    judge_score: float
     passed: bool
     confidence_score: float
     reasoning: Optional[str] = None

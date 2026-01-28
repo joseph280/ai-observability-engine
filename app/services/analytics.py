@@ -14,7 +14,8 @@ class AnalyticsService:
         pending = db.query(func.count(TaskDB.id)).filter(TaskDB.status == "processing").scalar() or 0
 
         #Quality Metrics (Aggregations)
-        avg_score = db.query(func.avg(EvaluationDB.score)).scalar() or 0.0
+        avg_score = db.query(func.avg(EvaluationDB.judge_score)).scalar() or 0.0
+        avg_conf_score = db.query(func.avg(EvaluationDB.confidence_score)).scalar() or 0.0
 
         #Pass rate
         total_evals = db.query(func.count(EvaluationDB.id)).scalar() or 0
@@ -28,5 +29,6 @@ class AnalyticsService:
             "failed_requests": failed,
             "pending_requests": pending,
             "average_quality_score":  round(avg_score, 2),
+            "average_confidence_score":  round(avg_conf_score, 2),
             "pass_rate": round(pass_rate, 2)
         }

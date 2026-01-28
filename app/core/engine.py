@@ -1,4 +1,5 @@
 import asyncio
+import json
 import math
 import os
 
@@ -21,7 +22,7 @@ class LLMEngine:
     def __init__(self, provider: str ="openai"):
         self.provider = provider
 
-    async def run_task(self, input_text: str) -> tuple [str, float]:
+    async def run_task(self, input_text: str) -> tuple [str, float, float]:
         """
         Send input_text to an LLM and return output_text.
         """
@@ -98,8 +99,61 @@ class LLMEngine:
     
 
     async def evaluate_text(self, input_text: str, output_text: str) -> dict:
-        #Use LLM to judge
-        return
+        #Use LLM as a Semantic AI Judge
+        #1. Define the rules:
+        judge_instructions = """
+        You are a High-Precision AI Quality Auditor. 
+        Instead of rounding to the nearest 0.5, you must provide a granular score 
+        based on a 100-point scale converted to a float (e.g., 0.64, 0.82, 0.17).
+
+        SCORING CONTINUUM:
+        - 1.0: Flawless. Factual, insightful, and perfectly logical.
+        - 0.70 - 0.99: High quality with minor optimizations possible.
+        - 0.40 - 0.69: Mediocre. Technically safe but generic, circular, or "filler" text.
+        - 0.00 - 0.39: Failure. Nonsense, hallucinations, or validating logically broken prompts.
+
+        CRITICAL EVALUATION:
+        If the input is nonsensical (e.g., "Why is true not true"), penalize generic 
+        supportive answers heavily. A "canned" empathetic response to gibberish 
+        should result in a score between 0.10 and 0.25.
+
+        OUTPUT FORMAT:
+        Return ONLY valid JSON:
+        {
+            "judge_score": float,
+            "passed": boolean,
+            "reasoning": string (max 15 words)
+        }
+        """
+
+        # 2. Present the Evidence
+        evidence = f"User Input: {input_text}\nAI Response: {output_text}"
+
+        try:
+            #3. Call the Judge
+            response = await client.responses.create(
+                model="gpt-3.5-turbo",
+                instructions=judge_instructions,
+                input= evidence,
+                timeout=15,
+                temperature=0.1 #Low temp = strict judge
+            )
+
+            #4. Extract and clean JSON
+            raw_text = response.output[0].content[0].text
+
+            #5. Remove Markdown fences if found
+            clean_json = raw_text.replace("```json", "").replace("```", "").strip()
+
+            return json.loads(clean_json)
+        except Exception as e:
+            #If the Judge fails, we don't fail the while req.
+            logger.error("judge_failed", extra={"error":str(e)})
+            return {
+                "judge_score":0.0,
+                "passed": False,
+                "reasoning": "Judge execution failed"
+            }
     
 
 
