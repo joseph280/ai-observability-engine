@@ -1,12 +1,10 @@
 import uuid
-from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from app.core.engine import LLMEngine
 from app.core.evaluator import Evaluator
 from app.core.logger import get_logger
 from app.db.models import EvaluationDB, TaskDB
-from app.db.session import get_db
 from app.schemas.task import TaskCreate
 
 logger = get_logger(__name__)
